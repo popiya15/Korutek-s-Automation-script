@@ -1,0 +1,76 @@
+leadId = input.id.toLong();
+// Get lead details
+leadInfo = zoho.crm.getRecordById("Leads",leadId);
+email = ifnull(leadInfo.get("Email"),"");
+leadName = ifnull(leadInfo.get("Full_Name"),"Customer");
+// Subject with Korutek mention
+subject = "Korutek – [Request] for Production Information";
+// Compose polite HTML email with signature (logo from Imgur)
+body = "<html><body style='font-family: Arial, sans-serif; color: #000000; line-height: 1.6;'>";
+// Email content
+body = body + "Dear " + leadName + ",<br/><br/>";
+body = body + "Thank you for your web enquiry.<br/><br/>";
+body = body + "To help us provide the most accurate and relevant information, we’ve attached a Production form.<br/>";
+body = body + "If you could kindly fill in the details that apply to your request, it will help us move forward more efficiently.<br/><br/>";
+body = body + "👉 <a href='https://docs.google.com/forms/d/1NNmkNULOOmPXwd_KStpo5nTf3K7gXKS6S5bzhSwvoMM/viewform?edit_requested=true' target='_blank' style='color: #1A73E8;'>Click here to access the Production Table</a><br/><br/>";
+body = body + "If you have any questions or need assistance while filling out the form, please don’t hesitate to contact us.<br/><br/>";
+body = body + "Looking forward to hearing from you soon.<br/><br/>";
+body = body + "Kind regards,<br/><br/>";
+body = body + "<b style='font-size: 16px; color: #666;'>Kritiv Kapil</b><br/>";
+body = body + "<b style='font-size: 14px; color: #666;'>Sales & Marketing Executive</b><br/><br/>";
+// Logo section with reduced padding and margin
+body = body + "<table style='font-size: 14px; padding: 0; margin: 0; border-spacing: 0;'>";
+// No padding, margin, or spacing
+body = body + "<tr><td><img src='https://i.imgur.com/mupC4s1.png' alt='Korutek Logo' style='max-width: 200px; margin: 0; padding: 0; display: block;'></td></tr>";
+// Korutek Logo with display: block to remove any spacing
+body = body + "</table>";
+// Add 1 space after the logo
+body = body + "<br/>";
+// Adding 1 space
+// Signature section: Followed by the sequence as per the image you provided
+body = body + "<table style='font-size: 14px; padding: 0; margin: 0; border-spacing: 0;'>";
+// No padding, margin, or spacing
+// Telephone first
+body = body + "<tr><td><b style='color: #666;'>Telephone:</b> +44 (0)1603 672455</td></tr>";
+// Add 1 space between telephone and company name
+body = body + "<tr><td>&nbsp;</td></tr>";
+// Adding a blank row for 1 space
+// Company name and address
+body = body + "<tr><td><b style='color: #666;'>Korutek Engineering Ltd</b><br/><b style='color: #666;'>Centrum, Norwich Research Park</b><br/><b style='color: #666;'>Norwich, NR4 7UG</b></td></tr>";
+body = body + "<tr><td>&nbsp;</td></tr>";
+// Adding a blank row for 1 space
+// Email next
+body = body + "<tr><td><b style='color: #666;'>Email:</b> <a href='mailto:kritiv.kapil@korutek.com' style='color: #1A73E8;'>kritiv.kapil@korutek.com</a></td></tr>";
+// Website
+body = body + "<tr><td><b style='color: #666;'>Website:</b> <a href='https://www.korutek.com' style='color: #1A73E8;'>www.korutek.com</a></td></tr>";
+body = body + "</table>";
+body = body + "</body></html>";
+// Add 1 space between website and Safe Contractor logo
+body = body + "<br/>";
+// Adding space between the website and last pic
+// Add Safe Contractor image
+body = body + "<img src='https://i.imgur.com/cqQCIS7.png' alt='Safe Contractor Logo' style='max-width: 80px;'><br/>";
+// Add company details in smaller and lighter font, 1 space closer to the logo
+body = body + "<div style='font-size: 10px; color: #666; margin-top: -2px;'>";
+// Adjusted margin for closer spacing
+body = body + "<b style='color: #666;'>Name & Registered Office:</b> Korutek Engineering Ltd, Centrum, Norwich Research Park, Norwich, NR4 7UG. Company No. 10226412";
+body = body + "</div>";
+// Send email
+if(email != "")
+{
+	sendmail
+	[
+		from :zoho.loginuserid
+		to :email
+		subject :subject
+		message :body
+	]
+	// Update lead status and "Production table sent" field with current date
+	updateMap = Map();
+	updateMap.put("Final_Status","Table sent");
+	updateMap.put("Spec_Form_Sent",zoho.currentdate);
+	// Add this line to set the date field
+	updateResp = zoho.crm.updateRecord("Leads",leadId,updateMap);
+}
+// Return message
+return "✅ Table sent email executed.";
