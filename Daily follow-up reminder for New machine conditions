@@ -1,0 +1,96 @@
+// CONFIG
+orgId = "org20093579070";
+baseUrl = "https://crm.zoho.eu/crm/" + orgId + "/tab/Potentials/";
+today = zoho.currentdate.toDate();
+targetDate = today.addDay(-30);
+// 30-day interval for New Machines
+sections = Map();
+sections.put("1st Follow-Up","");
+sections.put("2nd Follow-Up","");
+sections.put("3rd Follow-Up","");
+sections.put("4th Follow-Up","");
+hasMatch = false;
+counter = 1;
+// Paginate through deals manually
+page = 1;
+records = List();
+for each  pageIndex in {1,2,3,4,5}
+{
+	batch = zoho.crm.getRecords("Deals",pageIndex,200);
+	if(batch != null && batch.size() > 0)
+	{
+		for each  rec in batch
+		{
+			stage = ifnull(rec.get("Stage"),"");
+			prodType = ifnull(rec.get("Product_Type"),"");
+			if(!(stage == "Order: Received" || stage == "Order: Cancelled") && prodType == "New Machines")
+			{
+				enquiry = ifnull(rec.get("Enquiry_Number"),"Unknown");
+				company = ifnull(rec.get("Company_Name"),"Unknown");
+				customer = ifnull(rec.get("Customer_Name"),"Unknown");
+				dealId = rec.get("id");
+				crmLink = baseUrl + dealId;
+				content = counter.toString() + ". <b>Enquiry No:</b> " + enquiry + "<br/>" + "<b>Customer:</b> " + customer + "<br/>" + "<b>Company:</b> " + company + "<br/>" + "<a href='" + crmLink + "' target='_blank'>🔗 View in CRM</a><br/><br/>";
+				// Match by date
+				if(rec.get("Quote_Sent_Date") != null && rec.get("Quote_Sent_Date").toDate() == targetDate)
+				{
+					sections.put("1st Follow-Up",sections.get("1st Follow-Up") + content);
+					hasMatch = true;
+					counter = counter + 1;
+				}
+				else if(rec.get("st_Follow_Up_Date") != null && rec.get("st_Follow_Up_Date").toDate() == targetDate)
+				{
+					sections.put("2nd Follow-Up",sections.get("2nd Follow-Up") + content);
+					hasMatch = true;
+					counter = counter + 1;
+				}
+				else if(rec.get("nd_Follow_Up_Date") != null && rec.get("nd_Follow_Up_Date").toDate() == targetDate)
+				{
+					sections.put("3rd Follow-Up",sections.get("3rd Follow-Up") + content);
+					hasMatch = true;
+					counter = counter + 1;
+				}
+				else if(rec.get("rd_Follow_Up_Date") != null && rec.get("rd_Follow_Up_Date").toDate() == targetDate)
+				{
+					sections.put("4th Follow-Up",sections.get("4th Follow-Up") + content);
+					hasMatch = true;
+					counter = counter + 1;
+				}
+			}
+		}
+		if(batch.size() < 200)
+		{
+			break;
+		}
+	}
+	else
+	{
+		break;
+	}
+}
+// 📨 Compose and send email
+if(hasMatch)
+{
+	body = "<b>🔔 Follow-Up Reminder – " + today.toString("dd MMM yyyy") + "</b><br/><br/>";
+	for each  key in {"1st Follow-Up","2nd Follow-Up","3rd Follow-Up","4th Follow-Up"}
+	{
+		sectionData = sections.get(key);
+		if(sectionData != "")
+		{
+			body = body + "<u><b>" + key + "</b></u><br/><br/>" + sectionData;
+		}
+	}
+	body = body + "<b>⚠ Please follow up with them today.</b>";
+	sendmail
+	[
+		from :zoho.loginuserid
+		to :"kritiv.kapil@korutek.com, cta24cju@uea.ac.uk"
+		subject :"[Daily Reminder] Follow-Up Due Today – New Machines"
+		message :body
+	]
+	info "✅ Email sent.";
+}
+else
+{
+	info "✅ No follow-ups due today.";
+}
